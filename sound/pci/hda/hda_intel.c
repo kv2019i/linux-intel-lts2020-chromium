@@ -520,6 +520,8 @@ static void intel_init_lctl(struct azx *chip)
 
 	/* 0. check lctl register value is correct or not */
 	val = readl(bus->mlcap + AZX_ML_BASE + AZX_REG_ML_LCTL);
+	dev_err(chip->card->dev, "KV HDA debug LCTL %08x\n", val);
+
 	/* if SCF is already set, let's use it */
 	if ((val & ML_LCTL_SCF_MASK) != 0)
 		return;
@@ -573,6 +575,15 @@ static void hda_intel_init_chip(struct azx *chip, bool full_reset)
 	/* reduce dma latency to avoid noise */
 	if (IS_BXT(pci))
 		bxt_reduce_dma_latency(chip);
+
+	val = azx_readl(chip, VS_EM1);
+	dev_err(chip->card->dev, "KV HDA debug VS_EM1 %08x\n", val);
+
+#if 0
+	azx_writel(chip, VS_EM1, 0x29020602 /* 0x08020608*/);
+	val = azx_readl(chip, VS_EM1);
+	dev_err(chip->card->dev, "KV HDA debug VS_EM1 %08x\n", val);
+#endif
 
 	if (bus->mlcap != NULL)
 		intel_init_lctl(chip);
