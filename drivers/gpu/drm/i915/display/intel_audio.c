@@ -1016,9 +1016,18 @@ static unsigned long i915_audio_component_get_power(struct device *kdev)
 		if (IS_GEMINILAKE(dev_priv))
 			glk_force_audio_cdclk(dev_priv, true);
 
-		if (DISPLAY_VER(dev_priv) >= 10)
+		if (DISPLAY_VER(dev_priv) >= 10) {
+			drm_info(&dev_priv->drm, "%s: AUD_PIN_BUF at get_power %x (saved %x)\n", __func__, intel_de_read(dev_priv, AUD_PIN_BUF_CTL), dev_priv->audio_pin_buf_ctl);
+
+			if (!dev_priv->audio_pin_buf_ctl) {
+				/* use one known good value for ADLP */
+				dev_priv->audio_pin_buf_ctl = 0x30177117;
+				drm_err(&dev_priv->drm, "%s: AUD_PIN_BUF zero, trying with default of %x\n", __func__, dev_priv->audio_pin_buf_ctl);
+			}
+
 			intel_de_write(dev_priv, AUD_PIN_BUF_CTL,
-				       (intel_de_read(dev_priv, AUD_PIN_BUF_CTL) | AUD_PIN_BUF_ENABLE));
+				       dev_priv->audio_pin_buf_ctl | AUD_PIN_BUF_ENABLE);
+		}
 	}
 
 	return ret;
@@ -1316,6 +1325,11 @@ static void i915_audio_component_init(struct drm_i915_private *dev_priv)
 			    aud_freq, aud_freq_init);
 
 		dev_priv->audio_freq_cntrl = aud_freq;
+
+		dev_priv->audio_pin_buf_ctl = intel_de_read(dev_priv, AUD_PIN_BUF_CTL);
+		drm_dbg_kms(&dev_priv->drm, "AUD_PIN_BUF_CTL at init 0x%x\n",
+			    dev_priv->audio_pin_buf_ctl);
+
 	}
 
 	dev_priv->audio_component_registered = true;
